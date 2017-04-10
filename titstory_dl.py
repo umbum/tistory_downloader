@@ -81,14 +81,17 @@ class Retriever():
 
         
 class Tistory():
-    __slots__ = ('count', 'dom', 'host')
+    __slots__ = ('count', 'dom', 'host', 'media', 'html2md', 'backup')
 
-    def __init__(self, url):
+    def __init__(self, url, media, html2md, backup):
         self.count = 0
         #user:passwd@host:port/path
         #netloc = user:passwd@host:port
         parsed = urlparse(url)
         self.host = parsed.netloc.split('@')[-1].split(':')[0]
+        self.media = media
+        self.html2md = html2md
+        self.backup = backup
 
 
     def make_dir(self, path):
@@ -113,7 +116,7 @@ class Tistory():
             
         return category_list
 
-    def get_posts_in_cat(self, category, media=True, html2md=True):
+    def get_posts_in_cat(self, category):
         with urlopen("http://"+self.host+category) as u:
                 soup = bs4.BeautifulSoup(u, "lxml")
         post_list = []
@@ -136,15 +139,15 @@ class Tistory():
         
         for post in post_list:
             r = Retriever(self.host+post, category[9:].replace('.', '#'))
-            r.download(media, html2md)
+            r.download(media=self.media, html2md=self.html2md)
         
         return len(post_list)
         
     '''access category page,
     parse category page and get posts'''
-    def start(self, media=True, html2md=True, backup=False):
+    def start(self):
         self.make_dir(self.host)
-        if backup:
+        if self.backup:
             r = Retriever("http://"+self.host)
             r.download(self.host+"/#back.html", media=False, html2md=False)
 
@@ -166,26 +169,20 @@ class Tistory():
 
 
 
-
 def _main():
     argparser = argparse.ArgumentParser(description='tistory downloader')
-    argparser.add_argument('-m', )
-    if 1 < len(sys.argv) < 3:
-        url = sys.argv[1]
-    else:
-        try:
-            print('Usage: [-m] [-h2md] eg.tistory.com')
-        except (KeyboardInterrupt, EOFError):
-            return
+    argparser.add_argument('-o', action='store_false', help="download html file only. do not download inner media(image) data.")
+    argparser.add_argument('-h2md', action='store_true', help="convert html files to md files, obtaining only article (div class=article)")
+    argparser.add_argument('-b', action='store_true', help="backup eg.tistory.com source")
+    argparser.add_argument('url', type=str, help='eg.tistory.com')
+    argv = argparser.parse_args()
 
+    url = argv.url
     if not url.startswith("http://"):
         url = "http://%s/" % url
-
-    '''
-    robot = Tistory(url)
-    #robot.backup_html()
-    robot.start(media=True, html2md=True)
-    '''
+    
+    robot = Tistory(url, media=argv.o, html2md=argv.h2md, backup=argv.b)
+    robot.start()
 
 if __name__ == '__main__':
     _main()
