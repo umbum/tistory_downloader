@@ -171,8 +171,8 @@ class Tistory():
 
 def _main():
     argparser = argparse.ArgumentParser(description='tistory downloader')
-    argparser.add_argument('-o', action='store_false', help="download html file only. do not download inner media(image) data.")
-    argparser.add_argument('-h2md', action='store_true', help="convert html files to md files, obtaining only article (div class=article)")
+    argparser.add_argument('-o', action='store_false', help="Do not download inner media(image) data.download html file only.")
+    argparser.add_argument('-h2md', action='store_true', help="convert html files to md files, obtaining only article (div class=article). If there is not -o option, change src value of img tag that has linked eg.tistory.com to eg.github.io")
     argparser.add_argument('-b', action='store_true', help="backup eg.tistory.com source")
     argparser.add_argument('url', type=str, help='eg.tistory.com')
     argv = argparser.parse_args()
