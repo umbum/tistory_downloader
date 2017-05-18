@@ -28,15 +28,14 @@ a['href'] = "http://...."
 '''
 
 
-#HTML 파일 하나를 받아 다운로드+ media=True이면 내부 데이터를 받아오는 클래스
+#HTML 파일 하나를 받아 다운로드+ nomedia=False이면 내부 데이터를 받아오는 클래스
 class Retriever():
-    __slots__ = ('postUrl', 'postPath', 'soup')
+    __slots__ = ('url', 'filename', 'srcDir', 'soup')
     
-    def __init__(self, url, category):
-        self.postUrl = url
-        '''/entry로 지정해야 entry.tistory.com일 경우에도 entry를 변환하지 않는다.
-        1번만 replace해야 path가 /entry로 시작할 경우에도 변환하지 않는다.'''
-        self.postPath = unquote(url.replace("/entry", category, 1))
+    def __init__(self, host, post, category, srcDomain):
+        self.url = "http://" + host + post
+        self.filename = unquote(host + category + post[6:]) #post의 /entry제거
+        self.srcDir = srcDomain.format(postname=post[7:], category=category[1:]) # / 제거
         self.soup = ''
     
     def make_dir(self, path):
@@ -56,19 +55,19 @@ class Retriever():
         #urlretrieve returns (filename, headers)
         return fname[0]
 
-    def download(self, media=True, html2md=True):
-        print(self.postUrl)
-        with urlopen("http://" + self.postUrl) as u:
+    def download(self, nomedia=False, html2md=True):
+        print("download url : " + self.url)
+        with urlopen(self.url) as u:
             self.soup = bs4.BeautifulSoup(u, "lxml")
         
         if html2md:
-            filename = self.postPath + ".md"
-            if self.article_filter() == 0:
-                return 0
+            filename = self.filename + ".md"
+            if self.article_filter() == 0: # err
+                return 0 
         else:
-            filename = self.postPath + ".html"
-        
-        if media:
+            filename = self.filename + ".html"
+
+        if not nomedia:
             self._download_media()
             
         with open(filename, 'w', encoding='utf-8') as f:
@@ -83,15 +82,16 @@ class Retriever():
         #srcset이 없는 건 타 홈페이지에 걸려있는 img이므로 저장하지 않는다.
         has_srcset = lambda tag: tag.has_attr('srcset')
         if len(self.soup(has_srcset)) != 0:
-            dpath = self.postPath+"_files/"
-            self.make_dir(dpath)            
+            localSrcDir = self.filename+"_files/"
+            self.make_dir(localSrcDir)
+
             for imgTag in self.soup(has_srcset):
                 url = imgTag.get('srcset').split(' ')[0]
                 imgName = imgTag.get('filename')
                 url = "http:"+url #앞에 //가 붙어있기 때문에 http:
-                fname = self._download(url, dpath+imgName)
-                fname = fname.replace("tistory.com", "github.io", 1)
-                imgTag['src'] = "http://" + fname
+                self._download(url, localSrcDir+imgName)
+                imgTag['src'] = self.srcDir+imgName
+                del imgTag['srcset']
                 
                 
     #div class="article"
@@ -99,7 +99,7 @@ class Retriever():
         self.soup = self.soup.find('div', class_='article')
         
         if not self.soup:
-            print(self.postUrl, "is protected post")
+            print(self.url, "is protected post")
             return 0
         else:
             remove_last = self.soup.find('div', class_="another_category")
@@ -115,16 +115,17 @@ class Retriever():
 #티스토리 정보를 담고있는 클래스
 
 class Tistory():
-    __slots__ = ('count', 'dom', 'host', 'media', 'html2md', 'backup')
+    __slots__ = ('count', 'dom', 'host', 'nomedia', 'html2md', 'srcDomain', 'backup')
 
-    def __init__(self, url, media, html2md, backup):
+    def __init__(self, url, nomedia, html2md, srcDomain, backup):
         self.count = 0
         #user:passwd@host:port/path
         #netloc = user:passwd@host:port
         parsed = urlparse(url)
         self.host = parsed.netloc.split('@')[-1].split(':')[0]
-        self.media = media
+        self.nomedia = nomedia
         self.html2md = html2md
+        self.srcDomain = srcDomain
         self.backup = backup
 
     def make_dir(self, path):
@@ -211,8 +212,8 @@ class Tistory():
                 break
         
         for post in post_list:
-            r = Retriever(self.host+post, category[9:].replace('.', '#'))
-            r.download(media=self.media, html2md=self.html2md)
+            r = Retriever(self.host, post, category[9:].replace('.', '#'), self.srcDomain)
+            r.download(nomedia=self.nomedia, html2md=self.html2md)
         
         return len(post_list)
         
@@ -229,7 +230,7 @@ class Tistory():
         self.make_dir(self.host)
         if self.backup:
             r = Retriever("http://"+self.host)
-            r.download(self.host+"/#back.html", media=False, html2md=False)
+            r.download(self.host+"/#back.html", nomedia=True, html2md=False)
 
         category_list = self.get_categorys()
         for category, sub_category_list in category_list:
@@ -252,8 +253,9 @@ class Tistory():
 
 def _main():
     argparser = argparse.ArgumentParser(description='tistory downloader')
-    argparser.add_argument('-o', action='store_false', help="Do not download inner media(image) data.download html file only.")
-    argparser.add_argument('-t2g', action='store_true', help="convert html files to md files, obtaining only article (div class=article). If there is not -o option, change src value of img tag that has linked eg.tistory.com to eg.github.io")
+    argparser.add_argument('-nomedia', action='store_true', help="Do not download inner media(image) data.download html file only.")
+    argparser.add_argument('-md', action='store_true', help="Convert html files to md files, obtaining only article (div class=article). If there is no -nomedia option, change src value of img tag that has linked eg.tistory.com to src domain.")
+    argparser.add_argument('--src', default="./{postname}_files/", help="specify src domain. ( default: ./{postname}_files/ ) (e.g. : eg.github.io/{category}/{postname}_files/ )")
     argparser.add_argument('-b', action='store_true', help="backup eg.tistory.com source")
     argparser.add_argument('url', type=str, help='eg.tistory.com')
     argv = argparser.parse_args()
@@ -261,9 +263,12 @@ def _main():
     url = argv.url
     if not url.startswith("http://"):
         url = "http://%s/" % url
-    
-    robot = Tistory(url, media=argv.o, html2md=argv.t2g, backup=argv.b)
+    if not argv.src.endswith("/"):
+        src = src+"/"
+
+    robot = Tistory(url, nomedia=argv.nomedia, html2md=argv.md, srcDomain=argv.src, backup=argv.b)
     robot.start()
+    
 
 if __name__ == '__main__':
     _main()
