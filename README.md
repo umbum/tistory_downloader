@@ -1,12 +1,7 @@
 # tistory_dl
-<<<<<<< HEAD
+
 tistory 게시글을 카테고리 별로 다운로드 하는 파이썬 스크립트.  
 본문 내의 이미지 데이터도 함께 다운로드 된다.  
-=======
-tistory 게시글을 카테고리 별로 다운로드 하는 파이썬 스크립트.
-
-tistory에서 github_page로 옮길 때 사용하려고 만들었으나, 그냥 tistory 게시글을 다운로드 하는 목적으로 사용할 수 있다.
->>>>>>> f0ea753785d86f7220a195910067220229358bd3
 
 `python .\titstory_dl.py [-h] [-nomedia] [-md] [--src SRC] [-b] url`
 
