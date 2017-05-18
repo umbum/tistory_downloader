@@ -1,6 +1,12 @@
 # tistory_dl
+<<<<<<< HEAD
 tistory 게시글을 카테고리 별로 다운로드 하는 파이썬 스크립트.  
 본문 내의 이미지 데이터도 함께 다운로드 된다.  
+=======
+tistory 게시글을 카테고리 별로 다운로드 하는 파이썬 스크립트.
+
+tistory에서 github_page로 옮길 때 사용하려고 만들었으나, 그냥 tistory 게시글을 다운로드 하는 목적으로 사용할 수 있다.
+>>>>>>> f0ea753785d86f7220a195910067220229358bd3
 
 `python .\titstory_dl.py [-h] [-nomedia] [-md] [--src SRC] [-b] url`
 
@@ -21,7 +27,6 @@ optional arguments:
   -b          eg.tistory.com의 html 파일을 저장한다.srcset attribute를 삭제한다. ( 백업용 )
 ```
 
-
 * tistory에서 github page로 포스트를 옮기려면 -md 옵션을 주어 다운로드 한 다음, 생성된 데이터를 그대로 push하면 된다. --src eg.github.o/{category}/{postname}_files/는 줘도 되고 안줘도 된다.
 * 사용하는 티스토리 카테고리 태그에 따라 제대로 동작하지 않을 수 있다.
-* 로컬에 저장하는 파일 이름은 url에서 받아오기 때문에, 포스트 주소를 숫자로 설정해 놓은 경우 (eg.tistoy.com/11) 숫자가 파일 이름이 된다. 이 경우 티스토리 설정에서 포스트 주소를 문자로 변경하면 된다.
+* 로컬에 저장하는 파일 이름은 url에서 받아오기 때문에, 포스트 주소를 숫자로 설정해 놓은 경우 (eg.tistoy.com/11) 숫자가 파일 이름이 된다. 이 경우 티스토리 설정에서 포스트 주소를 문자로 변경하면 포스트 이름을 파일로 해서 다운로드 할 수 있다.
