@@ -120,9 +120,10 @@ class Tistory():
         with urlopen("http://"+self.host+category) as u:
                 soup = bs4.BeautifulSoup(u, "lxml")
         post_list = []
+        print(soup.find("body").find_all("a"))
         
         while True:
-            body = soup.find(id="body")
+            body = soup.find("body")
             post_list += [post['href'] for post in body.find_all('a')]
             if not post_list:
                 print("*", category, "is empty")

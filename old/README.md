@@ -1,6 +1,6 @@
 # tistory_dl
 
-tistory 게시글을 카테고리 별로 다운로드 하는 파이썬 스크립트.  
+tistory 블로그의 전체 게시글을 카테고리 별로 디렉터리를 나눠 다운로드 하는 파이썬 스크립트.  
 본문 내의 이미지 데이터도 함께 다운로드 된다.  
 
 `python .\titstory_dl.py [-h] [-nomedia] [-md] [--src SRC] [-b] url`
